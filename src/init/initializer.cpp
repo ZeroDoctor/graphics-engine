@@ -1,7 +1,5 @@
 #include "initializer.hpp"
 
-#include "vertex.hpp"
-
 // Infos
 VkApplicationInfo init::application_info(VulkanConfiguration* config)
 {

@@ -269,6 +269,8 @@ void VulkanGraphicsPipline::CreatePipelineLayout(uint32_t width, uint32_t height
     auto binding_description = Vertex::getBindingDescription();
     auto attribute_description = Vertex::getAttributeDescriptions();
     
+    printfv("%d - %d\n", binding_description.inputRate, VK_VERTEX_INPUT_RATE_VERTEX);
+
     VkPipelineVertexInputStateCreateInfo vertex_input_info = init::pipeline_vertex_input_state_info(
         attribute_description.data(), static_cast<uint32_t>(attribute_description.size()), 
         &binding_description, 1

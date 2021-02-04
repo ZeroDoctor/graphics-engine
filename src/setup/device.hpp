@@ -1,7 +1,6 @@
 #pragma once
 
 #include "build_order.hpp"
-#include "vertex.hpp"
 #include "instance.hpp"
 #include "physical_device.hpp"
 #include "pipeline.hpp"

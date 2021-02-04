@@ -1,7 +1,6 @@
 #pragma once
 
 #include "build_order.hpp"
-#include "vertex.hpp"
 #include "device.hpp"
 #include "vertex_buffer.hpp"
 

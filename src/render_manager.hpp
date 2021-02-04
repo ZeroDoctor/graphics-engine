@@ -2,7 +2,6 @@
 
 #include "build_order.hpp"
 #include "vulkan_config.hpp"
-#include "vertex.hpp"
 #include "instance.hpp"
 #include "physical_device.hpp"
 #include "device.hpp"
