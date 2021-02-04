@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.2)
 
 project(graphics-engine)
 
+set (CMAKE_CXX_STANDARD 17)
+
 if (WIN32)
     list(APPEND GLM_INCLUDE_DIR "C:/Library/glm-0.9.9.8/glm/glm")
     set(glm_DIR "C:/Library/glm-0.9.9.8/glm/cmake/glm")
