@@ -119,7 +119,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanInstance::debugCallback(
             // printfv("%s\n", pcallback_data->pMessage);
             return VK_FALSE;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-            printfi("%s\n", pcallback_data->pMessage);
+            // printfi("%s\n", pcallback_data->pMessage);
             return VK_FALSE;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
             printfw("%s\n", pcallback_data->pMessage);

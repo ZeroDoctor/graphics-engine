@@ -64,7 +64,7 @@ int main()
     printfi("--> program starto...\n");
 
     draw_box(wf/2 - (300/2), hf/2 + (250/2), 300, 250, 5);
-    //draw_box(100.0, 20.0 + 1050, 500, 1050, 5);
+    draw_box(wf/2 - (600/2), hf/2 + (500/2), 600, 500, 5);
 
     std::unique_ptr<RenderManager> renderer(new RenderManager());
 

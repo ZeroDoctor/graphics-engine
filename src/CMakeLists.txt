@@ -11,7 +11,6 @@ endif(WIN32)
 
 find_package(Vulkan REQUIRED FATAL_ERROR)
 find_package(glm REQUIRED FATAL_ERROR)
-message(STATUS "GLM included at ${GLM_INCLUDE_DIR}")
 find_package(Freetype REQUIRED FATAL_ERROR)
 
 file(GLOB util "util/*.cpp")
