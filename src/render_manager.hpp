@@ -3,11 +3,17 @@
 #include "build_order.hpp"
 #include "vulkan_config.hpp"
 #include "instance.hpp"
+#include "surface.hpp"
 #include "physical_device.hpp"
 #include "device.hpp"
 #include "image_view.hpp"
 #include "pipeline.hpp"
 #include "vertex_buffer.hpp"
+
+struct RenderSettings {
+    bool headless = false;
+    bool tessellation = false;
+};
 
 
 class RenderManager {

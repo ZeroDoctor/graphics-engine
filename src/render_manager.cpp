@@ -9,7 +9,7 @@ void RenderManager::Init(std::string app_name)
     
     // device setup
     m_instance = new VulkanInstance(config);
-    m_physical_device = VulkanPhysicalDevice::GetPhysicalDevice(m_instance);
+    m_physical_device = VulkanPhysicalDevice::GetPhysicalDevice(m_instance, nullptr, false);
     m_device = new VulkanDevice(m_instance, m_physical_device);
 }
 
