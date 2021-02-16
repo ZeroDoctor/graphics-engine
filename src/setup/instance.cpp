@@ -14,6 +14,10 @@ VulkanInstance::VulkanInstance(VulkanConfiguration& config)
 
     m_extensions.push_back("VK_EXT_debug_utils");
     m_extensions.push_back("VK_KHR_external_memory_capabilities");
+#if defined(VK_USE_PLATFORM_XCB_KHR) 
+    m_extensions.push_back("VK_KHR_xcb_surface");
+#endif
+    m_extensions.push_back("VK_KHR_surface");
     
     printfi("Getting Instance Info...\n");
     VkInstanceCreateInfo instance_info = init::instance_info(&app_info, m_extensions.data(), m_extensions.size(), &debug_info);
@@ -119,7 +123,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanInstance::debugCallback(
             // printfv("%s\n", pcallback_data->pMessage);
             return VK_FALSE;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-            // printfi("%s\n", pcallback_data->pMessage);
+            printf("%s\n", pcallback_data->pMessage);
             return VK_FALSE;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
             printfw("%s\n", pcallback_data->pMessage);
