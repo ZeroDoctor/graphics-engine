@@ -3,6 +3,7 @@
 #include "build_order.hpp"
 #include "queue_family.hpp"
 #include "instance.hpp"
+#include "surface.hpp"
 
 class VulkanInstance;
 
@@ -16,7 +17,7 @@ public:
     VkPhysicalDeviceFeatures& GetFeatures();
     VkPhysicalDeviceMemoryProperties& GetMemoryProperties();
 
-    static VulkanPhysicalDevice* GetPhysicalDevice(VulkanInstance*);
+    static VulkanPhysicalDevice* GetPhysicalDevice(VulkanInstance*, VulkanSurface* surface=nullptr, bool swapchain_needed=true);
     
 private:
     VulkanInstance* m_instance;
@@ -30,7 +31,7 @@ private:
 
     VulkanPhysicalDevice(VulkanInstance*, VkPhysicalDevice, QueueFamilyIndices);
     static std::vector<VkPhysicalDevice> getAvailablePhysicalDevice(VulkanInstance*);
-    static bool hasPhysicalDeviceSupport(VkPhysicalDevice*, QueueFamilyIndices*);
-    static bool hasSupportQueueFamily(VkPhysicalDevice*, QueueFamilyIndices*);
+    static bool hasPhysicalDeviceSupport(VkPhysicalDevice*, QueueFamilyIndices*, VulkanSurface*, bool);
+    static bool hasSupportQueueFamily(VkPhysicalDevice*, QueueFamilyIndices*, VulkanSurface*);
     static bool hasDeviceSwapChainSupport(VkPhysicalDevice, const std::vector<const char*>);
 };

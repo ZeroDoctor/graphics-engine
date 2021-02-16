@@ -1,6 +1,6 @@
 #include "physical_device.hpp"
 
-const std::vector<const char*>  VulkanPhysicalDevice::device_extensions = {
+const std::vector<const char*> VulkanPhysicalDevice::device_extensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
@@ -61,7 +61,7 @@ VulkanPhysicalDevice::~VulkanPhysicalDevice()
 
 }
 
-VulkanPhysicalDevice* VulkanPhysicalDevice::GetPhysicalDevice(VulkanInstance* instance) 
+VulkanPhysicalDevice* VulkanPhysicalDevice::GetPhysicalDevice(VulkanInstance* instance, VulkanSurface* surface, bool swapchain_needed) 
 {
     std::vector<VkPhysicalDevice> devices = getAvailablePhysicalDevice(instance);
 
@@ -71,13 +71,10 @@ VulkanPhysicalDevice* VulkanPhysicalDevice::GetPhysicalDevice(VulkanInstance* in
     for(auto &d : devices)
     {
         QueueFamilyIndices queue_family;
-        if(hasPhysicalDeviceSupport(&d, &queue_family))
+        if(hasPhysicalDeviceSupport(&d, &queue_family, surface, swapchain_needed))
         {
             VkPhysicalDeviceProperties properties;
-            vkGetPhysicalDeviceProperties(
-                d,
-                &properties
-            );
+            vkGetPhysicalDeviceProperties(d, &properties);
 
             if(properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
                 return new VulkanPhysicalDevice(instance, d, queue_family);
@@ -126,27 +123,27 @@ std::vector<VkPhysicalDevice> VulkanPhysicalDevice::getAvailablePhysicalDevice(V
     return devices;
 }
 
-bool VulkanPhysicalDevice::hasPhysicalDeviceSupport(VkPhysicalDevice* device, QueueFamilyIndices* queue_family)
+bool VulkanPhysicalDevice::hasPhysicalDeviceSupport(VkPhysicalDevice* device, QueueFamilyIndices* queue_family, VulkanSurface* surface, bool swapchain_needed)
 {
-    bool support_family = hasSupportQueueFamily(device, queue_family);
+    bool support_family = hasSupportQueueFamily(device, queue_family, surface);
     bool support_swapchain = hasDeviceSwapChainSupport(*device, device_extensions);
 
-    
     if(support_family) {
         printfi("Found supported queue family...\n");
     }
 
-    // TODO: support swap chaining along with surface in the future
-    if(support_swapchain) {
+    if(support_swapchain && swapchain_needed) {
         printfi("Found supported swap chain logical device...\n");
+    } else if(!support_swapchain && swapchain_needed) {
+        printfe("Found non-supported swap chain logical device...\n");
     } else {
-        printfw("Found non-supported swap chain logical device...\n");
+        printfw("Found supported swap chain logical device...\n");
     }
 
-    return support_family;
+    return support_family && !(!support_swapchain && swapchain_needed);
 }
 
-bool VulkanPhysicalDevice::hasSupportQueueFamily(VkPhysicalDevice* device, QueueFamilyIndices* queue_indices) 
+bool VulkanPhysicalDevice::hasSupportQueueFamily(VkPhysicalDevice* device, QueueFamilyIndices* queue_indices, VulkanSurface* surface) 
 {
     uint32_t queue_family_count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(
@@ -163,6 +160,8 @@ bool VulkanPhysicalDevice::hasSupportQueueFamily(VkPhysicalDevice* device, Queue
         queue_families.data()
     ); 
 
+    VkBool32 presentSupport = false;
+
     for(uint32_t i = 0; i < queue_families.size(); i++)
     {   
         VkQueueFamilyProperties qf = queue_families[i];
@@ -174,6 +173,15 @@ bool VulkanPhysicalDevice::hasSupportQueueFamily(VkPhysicalDevice* device, Queue
                 
             if(qf.queueFlags & VK_QUEUE_COMPUTE_BIT) {
                 queue_indices->compute_indices = i;
+            }
+
+            if(surface != nullptr) 
+            {
+                vkGetPhysicalDeviceSurfaceSupportKHR(*device, i, surface->GetSurface(), &presentSupport);
+                if(presentSupport == true) {
+                    queue_indices->present_indices = i;
+                    printfi("found present at: %d\n", i);
+                }
             }
         }
 
