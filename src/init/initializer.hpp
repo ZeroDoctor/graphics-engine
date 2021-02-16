@@ -1,7 +1,9 @@
 #pragma once
 
 #include "build_order.hpp"
+#include <xcb/xcb.h>
 #include "vulkan_config.hpp"
+#include <vulkan/vulkan_xcb.h>
 
 namespace init
 {
@@ -10,7 +12,7 @@ namespace init
     VkInstanceCreateInfo instance_info(VkApplicationInfo*,const char* const*,size_t,VkDebugUtilsMessengerCreateInfoEXT*);
     
     VkDeviceQueueCreateInfo device_queue_info(uint32_t, float*);
-    VkDeviceCreateInfo device_info(VkDeviceQueueCreateInfo*, size_t, VkPhysicalDeviceFeatures*);
+    VkDeviceCreateInfo device_info(VkDeviceQueueCreateInfo*, size_t, VkPhysicalDeviceFeatures*, std::vector<const char*>);
     
     VkCommandPoolCreateInfo command_pool_info(uint32_t, VkCommandPoolCreateFlags flags=0);
     VkCommandBufferAllocateInfo command_buffer_allocate_info(VkCommandPool, uint32_t);
@@ -68,6 +70,10 @@ namespace init
     VkSubmitInfo submit_info(uint32_t, VkCommandBuffer*);
     VkFenceCreateInfo fence_info(VkFenceCreateFlags flags=0);
 
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+    VkXcbSurfaceCreateInfoKHR surface_info(xcb_connection_t* connection, xcb_window_t window);   
+#endif
+    
     // Attachments
     VkPipelineColorBlendAttachmentState pipeline_colorblend_state();
     VkAttachmentDescription description(VkFormat, VkImageLayout);
@@ -80,5 +86,6 @@ namespace init
 
     // Image Copy
     VkImageCopy image_copy(uint32_t, uint32_t);
+    VkSwapchainCreateInfoKHR swapchain_info(VkSurfaceKHR, uint32_t, VkSurfaceFormatKHR, VkExtent2D);
 
 } // namespace Initializers

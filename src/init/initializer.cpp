@@ -50,7 +50,8 @@ VkDeviceQueueCreateInfo init::device_queue_info(uint32_t queue_family_index, flo
 VkDeviceCreateInfo init::device_info(
         VkDeviceQueueCreateInfo* queue_infos,
         size_t queue_info_count,
-        VkPhysicalDeviceFeatures* device_features
+        VkPhysicalDeviceFeatures* device_features,
+        std::vector<const char*> device_extensions
     ) 
 {
     VkDeviceCreateInfo info = {};
@@ -58,6 +59,8 @@ VkDeviceCreateInfo init::device_info(
     info.pQueueCreateInfos = queue_infos;
     info.queueCreateInfoCount = static_cast<uint32_t>(queue_info_count);
     info.pEnabledFeatures = device_features;
+    info.enabledExtensionCount = static_cast<uint32_t>(device_extensions.size());
+    info.ppEnabledExtensionNames = device_extensions.data();
     if(enable_validation_layers) {
         info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
         info.ppEnabledLayerNames = reinterpret_cast<const char* const*>(validation_layers.data());
@@ -475,3 +478,33 @@ VkImageCopy init::image_copy(uint32_t width, uint32_t height)
     copy.extent = {width, height, 1};
     return copy;
 }
+
+VkSwapchainCreateInfoKHR init::swapchain_info(
+        VkSurfaceKHR surface, uint32_t image_count, 
+        VkSurfaceFormatKHR format, VkExtent2D extent
+    )
+{
+    VkSwapchainCreateInfoKHR info = {};
+    info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    info.surface = surface;
+    info.minImageCount = image_count;
+    info.imageFormat = format.format;
+    info.imageColorSpace = format.colorSpace;
+    info.imageExtent = extent;
+    info.imageArrayLayers = 1;
+    info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    return info;
+}
+
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+VkXcbSurfaceCreateInfoKHR init::surface_info(xcb_connection_t* connection, xcb_window_t window)
+{
+    VkXcbSurfaceCreateInfoKHR info = {};
+    info.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+    info.connection = connection;
+    info.window = window;
+    return info; 
+}
+#endif
+
