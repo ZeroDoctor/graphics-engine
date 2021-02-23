@@ -1,5 +1,7 @@
 #include "build_order.hpp"
 #include "render_manager.hpp"
+#include "swapchain.hpp"
+#include <unistd.h>
 
 uint32_t id = 0; // shape id
 
@@ -58,7 +60,64 @@ void draw_box(float x, float y, float w, float h, float size=2)
 }
 
 int main() 
-{    
+{
+
+    const uint32_t swidth = 1280;
+    const uint32_t sheight = 720;
+    VulkanConfiguration config;
+    config.application_name = "Sup";
+    config.application_version = VK_MAKE_VERSION(1,0,0);
+
+    WindowSettings settings;
+    settings.fullscreen = false;
+    settings.title = config.application_name;
+
+    VulkanInstance instance(config);
+    VulkanSurface surface(&instance, settings, swidth, sheight);
+    VulkanPhysicalDevice* physical = VulkanPhysicalDevice::GetPhysicalDevice(&instance, &surface, true);
+    VulkanDevice device(&instance, physical);
+
+    VulkanSwapChain swapchain(&instance, physical, &device, &surface, swidth, sheight);
+    VulkanGraphicsPipline pipeline(&device, swidth, sheight);
+    std::vector<VkImageView> image_views = swapchain.GetImageViews();
+
+    VkFormat depth_format;
+    if(!device.GetSupportedDepthFormat(&depth_format)) {
+        printff("failed to find depth supported logical device");
+    }
+
+    VulkanImageView* depth_view = new VulkanImageView(&device);
+    depth_view->GenerateImage(swidth, sheight, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    VkImageAspectFlags flags[] = {
+        VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT
+    };
+    depth_view->CreateImageView(flags);
+
+    draw_box(wf/2 - (300/2), hf/2 + (250/2), 300, 250, 5);
+    draw_box(wf/2 - (600/2), hf/2 + (500/2), 600, 500, 5);
+
+    std::unique_ptr<VulkanVertexBuffer> vertex_buffer(new VulkanVertexBuffer(
+        &device, vertices, indices
+    ));
+
+    // VkCommandBuffer* command = new VkCommandBuffer[image_views.size()];
+
+    // pipeline
+    {
+        pipeline.CreateShaderModule("./../src/shader/vert.spv", "./../src/shader/frag.spv");
+        pipeline.CreateRenderPass(swapchain.GetFormat(), depth_format, true);
+        pipeline.CreateFrameBuffers(image_views.size(), image_views, &depth_view->GetImageViews()[0]);
+        // pipeline.CreatePipelineLayout(swidth, sheight);
+        // pipeline.CreateCommandBuffers(command, image_views.size(), vertex_buffer.get());
+    }
+
+    // device.FreeComputeCommand(command, image_views.size());
+
+    delete depth_view;
+
+    printfi("--> program endo...\n");
+    return 0;
+
     const VkFormat src_format = VK_FORMAT_R8G8B8A8_UNORM; // SRGB
 
     printfi("--> program starto...\n");

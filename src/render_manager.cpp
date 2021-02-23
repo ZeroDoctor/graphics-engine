@@ -22,15 +22,17 @@ void RenderManager::Setup(uint32_t width, uint32_t height, VkFormat src_format)
 
     // create "screen"
     m_screen_view = new VulkanImageView(m_device);
+    m_depth_view = new VulkanImageView(m_device);
     m_screen_view->GenerateImage(width, height, src_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    m_screen_view->GenerateImage(width, height, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    m_depth_view->GenerateImage(width, height, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     VkImageAspectFlags flags[] = {
         VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT
     };
     m_screen_view->CreateImageView(flags);
+    m_depth_view->CreateImageView(flags);
 
     m_pipeline = new VulkanGraphicsPipline(
-        m_device, src_format, width, height
+        m_device, width, height
     );
 
     m_width = width;
@@ -53,8 +55,8 @@ VulkanImageView* RenderManager::Draw( std::vector<Vertex> vertices, std::vector<
     {
         // Create Pipeline
         m_pipeline->CreateShaderModule("./../src/shader/vert.spv", "./../src/shader/frag.spv");
-        m_pipeline->CreateRenderPass(m_src_format, m_depth_format);
-        m_pipeline->CreateFrameBuffers(1, m_screen_view->GetImageViews());
+        m_pipeline->CreateRenderPass(m_src_format, m_depth_format, false);
+        m_pipeline->CreateFrameBuffers(1, m_screen_view->GetImageViews(), &m_depth_view->GetImageViews()[0]);
         m_pipeline->CreatePipelineLayout(m_width, m_height);
 
         // Start Drawing to buffer 
@@ -80,7 +82,6 @@ VulkanImageView* RenderManager::copyScreen(VkImage src_image)
         VK_IMAGE_TILING_LINEAR, 
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
     );
-    // output_view->CreateImageView(); not needed
 
     VkCommandBuffer copy_command = m_device->BeginSingleCommand();
 
@@ -119,6 +120,10 @@ void RenderManager::Close()
     if(m_screen_view != nullptr) {
         delete m_screen_view;
         m_screen_view = nullptr;
+    }
+    if(m_depth_view != nullptr) {
+        delete m_depth_view;
+        m_depth_view = nullptr;
     }
 }
 

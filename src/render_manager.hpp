@@ -33,7 +33,8 @@ private:
     VulkanInstance* m_instance;
     VulkanPhysicalDevice* m_physical_device;
     VulkanDevice* m_device;
-    VulkanImageView* m_screen_view;
+    VulkanImageView* m_screen_view=nullptr;
+    VulkanImageView* m_depth_view=nullptr;
     VulkanGraphicsPipline* m_pipeline;
 
     uint32_t m_width;
