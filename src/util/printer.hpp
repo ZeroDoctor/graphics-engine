@@ -20,7 +20,7 @@ inline void printfe(const char* msg, ...)
 { 
     va_list args;
     va_start(args, msg);
-    formatter("\033[1;31mERROR\033[0m: ", msg, args);
+    formatter("\033[1;31mERRO\033[0m: ", msg, args);
     va_end(args);
 }
 
@@ -36,7 +36,7 @@ inline void printfv(const char* msg, ...)
 { 
     va_list args;
     va_start(args, msg);
-    formatter("\033[1;32mVBOSE\033[0m: ", msg, args);
+    formatter("\033[1;32mVBSE\033[0m: ", msg, args);
     va_end(args);
 }
 
@@ -45,7 +45,7 @@ inline void printff(const char* msg, ...)
 {
     va_list args;
     va_start(args, msg);
-    formatter("\033[1;31mFATAL\033[0m:", msg, args);
+    formatter("\033[1;31mFATL\033[0m:", msg, args);
     va_end(args);
 
     throw std::runtime_error("throwing error");

@@ -8,14 +8,14 @@ void ErrorCheck(VkResult result, std::string msg)
         {
         case VK_ERROR_EXTENSION_NOT_PRESENT:
             printfw("EXTENSION_NOT_PRESENT %s\n", msg.c_str());
-            return;
+            if(msg != "Create Device") return;
             break;
         default:
             break;
         }
 
         printff((std::string("Failed to ") + msg + "\n").c_str());
-    }    
+    }
 }
 
 
