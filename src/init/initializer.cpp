@@ -25,7 +25,7 @@ VkInstanceCreateInfo init::instance_info(
     info.pApplicationInfo = appInfo;
     info.enabledExtensionCount = static_cast<uint32_t>(extensions_count);
     info.ppEnabledExtensionNames = extensions;
-    if(enable_validation_layers) 
+    if(enable_validation_layers)
     {
         info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
         info.ppEnabledLayerNames = reinterpret_cast<const char* const*>(validation_layers.data());
@@ -51,7 +51,7 @@ VkDeviceCreateInfo init::device_info(
         VkDeviceQueueCreateInfo* queue_infos,
         size_t queue_info_count,
         VkPhysicalDeviceFeatures* device_features,
-        std::vector<const char*> device_extensions
+        std::vector<const char*>& device_extensions
     ) 
 {
     VkDeviceCreateInfo info = {};
@@ -167,19 +167,21 @@ VkRenderPassBeginInfo init::render_pass_begin_info(
     return info;
 }
 
-VkImageViewCreateInfo init::image_view_info(VkImage image, VkFormat format)
+VkImageViewCreateInfo init::image_view_info(VkImage image, VkFormat format, bool components)
 {
     VkImageViewCreateInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     info.image = image;
     info.format = format;
-    /*
+    if(components) 
+    {
         info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
         info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
         info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
         info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-    */
+    }
+        
     info.subresourceRange = {};
     info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     info.subresourceRange.baseMipLevel = 0;
@@ -198,7 +200,6 @@ VkImageCreateInfo init::image_info(uint32_t width, uint32_t height, VkFormat for
     info.extent = {width, height, 1};
     info.mipLevels = 1;
     info.arrayLayers = 1;
-    
     
     info.samples = VK_SAMPLE_COUNT_1_BIT;
     info.usage = usage;
@@ -480,8 +481,8 @@ VkImageCopy init::image_copy(uint32_t width, uint32_t height)
 }
 
 VkSwapchainCreateInfoKHR init::swapchain_info(
-        VkSurfaceKHR surface, uint32_t image_count, 
-        VkSurfaceFormatKHR format, VkExtent2D extent
+        VkSurfaceKHR surface, VkSurfaceFormatKHR format, 
+        VkExtent2D extent,  uint32_t image_count
     )
 {
     VkSwapchainCreateInfoKHR info = {};
@@ -493,6 +494,9 @@ VkSwapchainCreateInfoKHR init::swapchain_info(
     info.imageExtent = extent;
     info.imageArrayLayers = 1;
     info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    info.clipped = VK_TRUE;
+    info.oldSwapchain = VK_NULL_HANDLE;
 
     return info;
 }

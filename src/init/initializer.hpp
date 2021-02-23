@@ -12,7 +12,7 @@ namespace init
     VkInstanceCreateInfo instance_info(VkApplicationInfo*,const char* const*,size_t,VkDebugUtilsMessengerCreateInfoEXT*);
     
     VkDeviceQueueCreateInfo device_queue_info(uint32_t, float*);
-    VkDeviceCreateInfo device_info(VkDeviceQueueCreateInfo*, size_t, VkPhysicalDeviceFeatures*, std::vector<const char*>);
+    VkDeviceCreateInfo device_info(VkDeviceQueueCreateInfo*, size_t, VkPhysicalDeviceFeatures*, std::vector<const char*>&);
     
     VkCommandPoolCreateInfo command_pool_info(uint32_t, VkCommandPoolCreateFlags flags=0);
     VkCommandBufferAllocateInfo command_buffer_allocate_info(VkCommandPool, uint32_t);
@@ -25,7 +25,7 @@ namespace init
     VkCommandBufferBeginInfo command_buffer_begin_info(VkCommandBufferUsageFlags);
     VkRenderPassBeginInfo render_pass_begin_info(VkRenderPass, VkRect2D, VkFramebuffer, VkClearValue*, uint32_t);
 
-    VkImageViewCreateInfo image_view_info(VkImage, VkFormat);
+    VkImageViewCreateInfo image_view_info(VkImage, VkFormat, bool components=false);
     VkImageCreateInfo image_info(uint32_t, uint32_t, VkFormat, VkImageTiling, VkImageUsageFlags);
     VkSamplerCreateInfo sampler_info();
 
@@ -86,6 +86,6 @@ namespace init
 
     // Image Copy
     VkImageCopy image_copy(uint32_t, uint32_t);
-    VkSwapchainCreateInfoKHR swapchain_info(VkSurfaceKHR, uint32_t, VkSurfaceFormatKHR, VkExtent2D);
+    VkSwapchainCreateInfoKHR swapchain_info(VkSurfaceKHR, VkSurfaceFormatKHR, VkExtent2D, uint32_t);
 
 } // namespace Initializers
