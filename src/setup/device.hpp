@@ -18,6 +18,7 @@ public:
     VulkanInstance* GetInstance();
     VkQueue GetComputeQueue();
     VkQueue GetGraphicsQueue();
+    VkQueue GetPresentQueue();
     VkCommandPool& GetComputeCommandPool();
     VkCommandPool& GetGraphicsCommandPool();
     void SetComputeCommand(VkCommandBuffer*, uint32_t);
@@ -33,8 +34,9 @@ private:
     VkDevice m_device;
     VkQueue m_compute_queue=NULL;
     VkQueue m_graphics_queue=NULL;
+    VkQueue m_present_queue=NULL;
     VulkanInstance* m_instance;
-    VulkanPhysicalDevice* m_physical_device;
+    VulkanPhysicalDevice* m_physical_device=nullptr;
     VkCommandPool m_ccompute_pool;
     VkCommandPool m_cgraphics_pool;
 

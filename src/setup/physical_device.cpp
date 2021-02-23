@@ -4,11 +4,12 @@ const std::vector<const char*> VulkanPhysicalDevice::device_extensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
-VulkanPhysicalDevice::VulkanPhysicalDevice(VulkanInstance* instance, VkPhysicalDevice device, QueueFamilyIndices queue_family) 
+VulkanPhysicalDevice::VulkanPhysicalDevice(VulkanInstance* instance, VkPhysicalDevice device, QueueFamilyIndices queue_family, bool swapchain_needed) 
 {
     m_instance = instance;
     m_device = device;
     m_queue_family = queue_family;
+    m_swapchain_needed = swapchain_needed;
 
     vkGetPhysicalDeviceProperties(
         m_device,
@@ -77,7 +78,8 @@ VulkanPhysicalDevice* VulkanPhysicalDevice::GetPhysicalDevice(VulkanInstance* in
             vkGetPhysicalDeviceProperties(d, &properties);
 
             if(properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-                return new VulkanPhysicalDevice(instance, d, queue_family);
+                printfi("Found Discrete GPU\n");
+                return new VulkanPhysicalDevice(instance, d, queue_family, swapchain_needed);
             } else {
                 secondary_device = d;
                 secondary_queue = queue_family;
@@ -88,13 +90,14 @@ VulkanPhysicalDevice* VulkanPhysicalDevice::GetPhysicalDevice(VulkanInstance* in
     // just a redundant check
     if(secondary_device == VK_NULL_HANDLE) return nullptr;
 
-    return new VulkanPhysicalDevice(instance, secondary_device, secondary_queue);
+    return new VulkanPhysicalDevice(instance, secondary_device, secondary_queue, swapchain_needed);
 }
 
 VkPhysicalDevice& VulkanPhysicalDevice::GetDevice() { return m_device; }
 QueueFamilyIndices& VulkanPhysicalDevice::GetQueueFamily() { return m_queue_family; }
 VkPhysicalDeviceFeatures& VulkanPhysicalDevice::GetFeatures() { return m_features; }
 VkPhysicalDeviceMemoryProperties& VulkanPhysicalDevice::GetMemoryProperties() { return m_memory_properties; }
+bool VulkanPhysicalDevice::HasSwapchainEnabled() { return m_swapchain_needed; }
 
 std::vector<VkPhysicalDevice> VulkanPhysicalDevice::getAvailablePhysicalDevice(VulkanInstance* instance) 
 {
@@ -128,6 +131,11 @@ bool VulkanPhysicalDevice::hasPhysicalDeviceSupport(VkPhysicalDevice* device, Qu
     bool support_family = hasSupportQueueFamily(device, queue_family, surface);
     bool support_swapchain = hasDeviceSwapChainSupport(*device, device_extensions);
 
+    if(support_swapchain) {
+        SwapChainSupportDetails details = querySwapChainSupport(*device, surface->GetSurface());
+        support_swapchain = !details.formats.empty() && !details.present_modes.empty();
+    }
+
     if(support_family) {
         printfi("Found supported queue family...\n");
     }
@@ -135,12 +143,14 @@ bool VulkanPhysicalDevice::hasPhysicalDeviceSupport(VkPhysicalDevice* device, Qu
     if(support_swapchain && swapchain_needed) {
         printfi("Found supported swap chain logical device...\n");
     } else if(!support_swapchain && swapchain_needed) {
-        printfe("Found non-supported swap chain logical device...\n");
+        printfe("Failed to find supported swap chain logical device...\n");
     } else {
-        printfw("Found supported swap chain logical device...\n");
+        printfw("Found non-supported swap chain logical device...\n");
     }
 
-    return support_family && !(!support_swapchain && swapchain_needed);
+    bool supported = support_family && !(!support_swapchain && swapchain_needed);
+    printfi("Device Supported: %s\n", supported ? "true" : "false");
+    return supported;
 }
 
 bool VulkanPhysicalDevice::hasSupportQueueFamily(VkPhysicalDevice* device, QueueFamilyIndices* queue_indices, VulkanSurface* surface) 
@@ -153,14 +163,11 @@ bool VulkanPhysicalDevice::hasSupportQueueFamily(VkPhysicalDevice* device, Queue
     );
 
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
-
     vkGetPhysicalDeviceQueueFamilyProperties(
         *device,
         &queue_family_count,
         queue_families.data()
     ); 
-
-    VkBool32 presentSupport = false;
 
     for(uint32_t i = 0; i < queue_families.size(); i++)
     {   
@@ -168,24 +175,27 @@ bool VulkanPhysicalDevice::hasSupportQueueFamily(VkPhysicalDevice* device, Queue
         if(qf.queueCount > 0) 
         {
             if(qf.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-                queue_indices->graphics_indices = i;
+                queue_indices->graphics_index = i;
             }
-                
+            
             if(qf.queueFlags & VK_QUEUE_COMPUTE_BIT) {
-                queue_indices->compute_indices = i;
+                queue_indices->compute_index = i;
             }
 
             if(surface != nullptr) 
             {
-                vkGetPhysicalDeviceSurfaceSupportKHR(*device, i, surface->GetSurface(), &presentSupport);
-                if(presentSupport == true) {
-                    queue_indices->present_indices = i;
-                    printfi("found present at: %d\n", i);
+                VkBool32 present_support = false;
+                vkGetPhysicalDeviceSurfaceSupportKHR(*device, i, surface->GetSurface(), &present_support);
+                if(present_support) {
+                    queue_indices->present_index = i;
+                    printfi("Found present index at: %d\n", i);
                 }
             }
         }
 
-        if(queue_indices->graphics_indices < UINT32_MAX && queue_indices->compute_indices < UINT32_MAX) return true;
+        if(queue_indices->graphics_index < UINT32_MAX && 
+            queue_indices->compute_index < UINT32_MAX && 
+            (surface != nullptr && queue_indices->present_index < UINT32_MAX)) return true;
     }
 
     return false;
@@ -216,4 +226,29 @@ bool VulkanPhysicalDevice::hasDeviceSwapChainSupport(VkPhysicalDevice device, co
     }
 
     return required_extensions.empty();
+}
+
+SwapChainSupportDetails VulkanPhysicalDevice::querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) 
+{
+    SwapChainSupportDetails details;
+
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+
+    uint32_t format_count;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, nullptr);
+
+    if(format_count != 0) {
+        details.formats.resize(format_count);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, details.formats.data());
+    }
+
+    uint32_t present_mode_count;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, nullptr);
+
+    if(present_mode_count != 0) {
+        details.present_modes.resize(present_mode_count);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, details.present_modes.data());
+    }
+
+    return details;
 }

@@ -12,12 +12,12 @@ VulkanInstance::VulkanInstance(VulkanConfiguration& config)
     printfi("Getting App Info...\n");
     VkApplicationInfo app_info = init::application_info(&config);
 
-    m_extensions.push_back("VK_EXT_debug_utils");
-    m_extensions.push_back("VK_KHR_external_memory_capabilities");
+    m_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    m_extensions.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
 #if defined(VK_USE_PLATFORM_XCB_KHR) 
-    m_extensions.push_back("VK_KHR_xcb_surface");
+    m_extensions.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
 #endif
-    m_extensions.push_back("VK_KHR_surface");
+    m_extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
     
     printfi("Getting Instance Info...\n");
     VkInstanceCreateInfo instance_info = init::instance_info(&app_info, m_extensions.data(), m_extensions.size(), &debug_info);
@@ -121,37 +121,38 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanInstance::debugCallback(
     {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
             // printfv("%s\n", pcallback_data->pMessage);
-            return VK_FALSE;
+            break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
             printf("%s\n", pcallback_data->pMessage);
-            return VK_FALSE;
+            break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
             printfw("%s\n", pcallback_data->pMessage);
-            return VK_FALSE;
+            break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
             printfe("%s\n", pcallback_data->pMessage);
-            return VK_FALSE;
+            break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT:
-            printfw("Now this is a werid one,but: \n\t%s\n", pcallback_data->pMessage);
-            return VK_FALSE;
+            printfw("Now this is a werid one, but: \n\t%s\n", pcallback_data->pMessage);
+            break;
     }
 
     switch(message_type)
     {
         case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT:
-            printfv("general type --> %s\n", pcallback_data->pMessage);
-            return VK_FALSE;
+            // printfv("general type --> %s\n", pcallback_data->pMessage);
+            break;
         case VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT:
-            printfw("validation type -->%s\n", pcallback_data->pMessage);
-            return VK_FALSE;
+            // printfw("validation type -->%s\n", pcallback_data->pMessage);
+            break;
         case VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT:
             printfw("performance type -->%s\n", pcallback_data->pMessage);
+            break;
         case VK_DEBUG_UTILS_MESSAGE_TYPE_FLAG_BITS_MAX_ENUM_EXT:
             printfw("type --> Now this is a werid one,but: \n\t%s\n", pcallback_data->pMessage);
-            return VK_FALSE;
+            break;
     }
 
-    std::cerr << pcallback_data->pMessage << std::endl;
+    // std::cerr << pcallback_data->pMessage << std::endl;
 
     return VK_FALSE;
 }

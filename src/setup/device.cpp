@@ -5,14 +5,27 @@ VulkanDevice::VulkanDevice(VulkanInstance* instance, VulkanPhysicalDevice* physi
     m_instance = instance;
     m_physical_device = physical_device;
 
-    std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
+    uint32_t compute_index = m_physical_device->GetQueueFamily().compute_index;
+    uint32_t graphics_index = m_physical_device->GetQueueFamily().graphics_index;
+    uint32_t present_index = m_physical_device->GetQueueFamily().present_index;
+    std::set<uint32_t> unique_queue_indices = {compute_index, graphics_index};
+    if(m_physical_device->HasSwapchainEnabled()) {
+        unique_queue_indices.insert(present_index);
+    }
 
+    std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
     float graphics_priority = 1.0f;
-    queue_create_infos.push_back(
-        init::device_queue_info(m_physical_device->GetQueueFamily().graphics_indices, &graphics_priority)
-    );
+    for(uint32_t queue_family : unique_queue_indices)
+    {
+        queue_create_infos.push_back(
+            init::device_queue_info(queue_family, &graphics_priority)
+        );
+    }
+
+    std::vector<const char*> device_extensions = m_physical_device->device_extensions;
     VkDeviceCreateInfo device_info = init::device_info(
-        queue_create_infos.data(), queue_create_infos.size(), &m_physical_device->GetFeatures()
+        queue_create_infos.data(), queue_create_infos.size(), 
+        &m_physical_device->GetFeatures(), device_extensions
     );
 
     ErrorCheck(vkCreateDevice(
@@ -22,40 +35,55 @@ VulkanDevice::VulkanDevice(VulkanInstance* instance, VulkanPhysicalDevice* physi
         &m_device
     ), "Create Device");
 
-    uint32_t compute_indices = m_physical_device->GetQueueFamily().compute_indices;
-    uint32_t graphics_indices = m_physical_device->GetQueueFamily().graphics_indices;
-
+    printfi("Creating compute queue\n");
     vkGetDeviceQueue(
         m_device,
-        compute_indices,
+        compute_index,
         0,
         &m_compute_queue
     );
 
-    if(graphics_indices < UINT32_MAX) {
+    if(graphics_index < UINT32_MAX) {
         printfi("Creating graphics queue\n");
         vkGetDeviceQueue(
             m_device,
-            graphics_indices,
+            graphics_index,
             0,
             &m_graphics_queue
         );
     } else {
-        printfw("Could not find suitable graphics indices");
+        printfw("Failed to find suitable graphics indices");
     }
 
-    createCommandPool(&m_ccompute_pool, compute_indices, 0);
-    createCommandPool(&m_cgraphics_pool, graphics_indices, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    if(present_index < UINT32_MAX) {
+        printfi("Creating present queue\n");
+        vkGetDeviceQueue(
+            m_device,
+            present_index,
+            0,
+            &m_present_queue
+        );
+    } else {
+        printfw("Failed to find suitable presentation indices");
+    }
+
+    createCommandPool(&m_ccompute_pool, compute_index, 0);
+    createCommandPool(&m_cgraphics_pool, graphics_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 }
 
 VulkanDevice::~VulkanDevice()
-{   
-    printfi("-- Destorying Command Pools...\n");
+{
+    printfi("-- Destroying Command Pools...\n");
     vkDestroyCommandPool(m_device, m_cgraphics_pool, nullptr);
     vkDestroyCommandPool(m_device, m_ccompute_pool, nullptr);
     
-    printfi("-- Destorying Logcial Device...\n");
+    printfi("-- Destroying Logcial Device...\n");
     vkDestroyDevice(m_device, nullptr);
+
+    if(m_physical_device != nullptr) {
+        printfi("-- Destroying Physical Device...\n");
+        delete(m_physical_device);
+    }
 }
 
 VkDevice VulkanDevice::GetDevice() { return m_device; }
@@ -63,6 +91,7 @@ VulkanPhysicalDevice* VulkanDevice::GetPhysicalDevice() { return m_physical_devi
 VulkanInstance* VulkanDevice::GetInstance() { return m_instance; }
 VkQueue VulkanDevice::GetComputeQueue() { return m_compute_queue; }
 VkQueue VulkanDevice::GetGraphicsQueue() { return m_graphics_queue; }
+VkQueue VulkanDevice::GetPresentQueue() { return m_present_queue; }
 VkCommandPool& VulkanDevice::GetComputeCommandPool() { return m_ccompute_pool; }
 VkCommandPool& VulkanDevice::GetGraphicsCommandPool() { return m_cgraphics_pool; }
 
