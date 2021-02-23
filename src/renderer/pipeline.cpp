@@ -1,15 +1,12 @@
 #include "pipeline.hpp"
 
 VulkanGraphicsPipline::VulkanGraphicsPipline(
-        VulkanDevice* device, 
-        VkFormat format,
-        uint32_t width, uint32_t height
+        VulkanDevice* device, uint32_t width, uint32_t height
     ) 
 {
     m_screen_width = width;
     m_screen_height = height;
     m_device = device;
-    //CreateRenderPass(format); // inits m_render_pass
 }
 
 VulkanGraphicsPipline::~VulkanGraphicsPipline()
@@ -20,9 +17,9 @@ VulkanGraphicsPipline::~VulkanGraphicsPipline()
     }
 
     // TODO: create free function for objects below
-    for(auto fb : m_frame_buffers) {
-        printfi("-- Destroying %d Framebuffer Pipeline...\n", m_frame_buffers.size());
-        vkDestroyFramebuffer(m_device->GetDevice(), fb, nullptr);
+    for(size_t i = 0; i < m_frame_buffers.size(); i++) {
+        printfi("-- Destroying %d Framebuffer Pipeline...\n", i);
+        vkDestroyFramebuffer(m_device->GetDevice(), m_frame_buffers[i], nullptr);
     }
 
     if(m_command_buffer_count != 0)
@@ -59,8 +56,10 @@ VulkanGraphicsPipline::~VulkanGraphicsPipline()
         vkDestroyShaderModule(m_device->GetDevice(), m_frag_module, nullptr);
     }
 
-    printfi("-- Destorying Descriptor Layout\n"); // not needed to destory the layout everytime
-    vkDestroyDescriptorSetLayout(m_device->GetDevice(), m_descriptor_set_layout, nullptr);
+    if(m_descriptor_set_layout != VK_NULL_HANDLE) {
+        printfi("-- Destorying Descriptor Layout\n"); // not needed to destory the layout everytime
+        vkDestroyDescriptorSetLayout(m_device->GetDevice(), m_descriptor_set_layout, nullptr);
+    }
 }
 
 // TODO: make it more generic
@@ -166,7 +165,7 @@ void VulkanGraphicsPipline::createDescriptorLayout()
     ),"Descriptor Set Layout");
 }
 
-void VulkanGraphicsPipline::CreateRenderPass(VkFormat color_format, VkFormat depth_format) 
+void VulkanGraphicsPipline::CreateRenderPass(VkFormat color_format, VkFormat depth_format, bool surface_enable) 
 {
     printfi("Creating Render Pass...\n");
 
@@ -195,19 +194,6 @@ void VulkanGraphicsPipline::CreateRenderPass(VkFormat color_format, VkFormat dep
     subpass_description.colorAttachmentCount = 1;
     subpass_description.pColorAttachments = &color_reference;
     subpass_description.pDepthStencilAttachment = &depth_reference;
-
-    
-        /* //-- used for surface enabled logical devices
-        std::array<VkSubpassDependency, 1> subpass_dependencies;
-
-        subpass_dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-        subpass_dependencies[0].dstSubpass = 0;
-        subpass_dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        subpass_dependencies[0].srcAccessMask = 0;
-        subpass_dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        subpass_dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        subpass_dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT; */
-
     
     std::array<VkSubpassDependency, 2> subpass_dependencies;
     
@@ -351,27 +337,29 @@ void VulkanGraphicsPipline::CreatePipelineLayout(uint32_t width, uint32_t height
     m_frag_module = 0;
 }
 
-void VulkanGraphicsPipline::CreateFrameBuffers(uint32_t count, std::vector<VkImageView> image_views) 
+void VulkanGraphicsPipline::CreateFrameBuffers(uint32_t count, std::vector<VkImageView> image_views, VkImageView* depth_view) 
 {
     printfi("Creating Frame Buffers %dx%d...\n", m_screen_width, m_screen_height);
 
     if(m_render_pass == NULL) {
-        printfe("Must create render pass first before creating frame buffers\n");
+        printff("Must create render pass first before creating frame buffers\n");
         return;
     }
 
     m_frame_buffers.resize(count);
-    // for now
-    VkImageView* attachments = image_views.data();
-
     for (size_t i = 0; i < count; i++)
     {
+        VkImageView attachments[] = {
+            image_views[i],
+            *depth_view
+        };
         VkFramebufferCreateInfo frame_buffer_info = init::frame_buffer_info(
             m_render_pass,
             attachments,
             m_screen_width, m_screen_height
         );
-        frame_buffer_info.attachmentCount = 2;
+        frame_buffer_info.attachmentCount = 1;
+        if(depth_view != nullptr) frame_buffer_info.attachmentCount = 2;
 
         printfi("Frame Buffer %d has been Set...\n",i);
         ErrorCheck(vkCreateFramebuffer(
@@ -397,19 +385,21 @@ void VulkanGraphicsPipline::CreateCommandBuffers(
     if(m_frame_buffers[0] == NULL) {
         printff("Can not create command buffers without frame buffers!");
     } else if(m_frame_buffers.size() < count) {
-        printfw("Something is werid here frame_buffer < command_buffer");
+        printfw("Something weird is going on here: frame_buffer < command_buffer");
     }
+
+    for(size_t i = 0; i < count; i++) buffers[i] = nullptr;
+
+    VkCommandBufferAllocateInfo alloc_info = init::command_buffer_allocate_info(
+        m_device->GetGraphicsCommandPool(), count
+    );
+    ErrorCheck(vkAllocateCommandBuffers(
+        m_device->GetDevice(), &alloc_info, buffers
+    ), "Allocate Command Buffers");
+
 
     for (size_t i = 0; i < count; i++)
     {
-        buffers[i] = nullptr;
-        VkCommandBufferAllocateInfo alloc_info = init::command_buffer_allocate_info(
-            m_device->GetGraphicsCommandPool(), 1
-        );
-        ErrorCheck(vkAllocateCommandBuffers(
-            m_device->GetDevice(), &alloc_info, &(buffers[i])
-        ), "Allocate Command Buffers");
-
         if(buffers[i] == nullptr) printff("Buffer is NULL\n");
         VkCommandBufferBeginInfo begin_info = init::command_buffer_begin_info(0);
 

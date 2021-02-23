@@ -11,12 +11,12 @@ class VulkanVertexBuffer;
 class VulkanGraphicsPipline
 {
 public:
-    VulkanGraphicsPipline(VulkanDevice*, VkFormat, uint32_t, uint32_t);
+    VulkanGraphicsPipline(VulkanDevice*, uint32_t, uint32_t);
     ~VulkanGraphicsPipline();
     void CreateShaderModule(std::string, std::string);
     void CreatePipelineLayout(uint32_t, uint32_t);
-    void CreateRenderPass(VkFormat, VkFormat);
-    void CreateFrameBuffers(uint32_t, std::vector<VkImageView>); 
+    void CreateRenderPass(VkFormat, VkFormat, bool);
+    void CreateFrameBuffers(uint32_t, std::vector<VkImageView>, VkImageView* depth_view=nullptr); 
     void CreateCommandBuffers(VkCommandBuffer*, uint32_t, VulkanVertexBuffer*);
     
 private:
@@ -39,7 +39,7 @@ private:
     uint32_t m_command_buffer_count=0;
     
     std::vector<VkImageView> m_imageviews;
-    VkDescriptorSetLayout m_descriptor_set_layout;
+    VkDescriptorSetLayout m_descriptor_set_layout=VK_NULL_HANDLE;
     VkDescriptorPool m_descriptor_pool;
     std::vector<VkDescriptorSet> m_descriptor_sets;
     
