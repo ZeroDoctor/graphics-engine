@@ -128,10 +128,11 @@ std::vector<VkPhysicalDevice> VulkanPhysicalDevice::getAvailablePhysicalDevice(V
 
 bool VulkanPhysicalDevice::hasPhysicalDeviceSupport(VkPhysicalDevice* device, QueueFamilyIndices* queue_family, VulkanSurface* surface, bool swapchain_needed)
 {
+    printfi("Looking for supported physical device...\n");
     bool support_family = hasSupportQueueFamily(device, queue_family, surface);
     bool support_swapchain = hasDeviceSwapChainSupport(*device, device_extensions);
 
-    if(support_swapchain) {
+    if(support_swapchain && swapchain_needed) {
         SwapChainSupportDetails details = querySwapChainSupport(*device, surface->GetSurface());
         support_swapchain = !details.formats.empty() && !details.present_modes.empty();
     }
@@ -145,10 +146,11 @@ bool VulkanPhysicalDevice::hasPhysicalDeviceSupport(VkPhysicalDevice* device, Qu
     } else if(!support_swapchain && swapchain_needed) {
         printfe("Failed to find supported swap chain logical device...\n");
     } else {
+        support_swapchain = true;
         printfw("Found non-supported swap chain logical device...\n");
     }
 
-    bool supported = support_family && !(!support_swapchain && swapchain_needed);
+    bool supported = support_family && support_swapchain;
     printfi("Device Supported: %s\n", supported ? "true" : "false");
     return supported;
 }
@@ -168,7 +170,8 @@ bool VulkanPhysicalDevice::hasSupportQueueFamily(VkPhysicalDevice* device, Queue
         &queue_family_count,
         queue_families.data()
     ); 
-
+    bool found_surface = true;
+    if(surface != nullptr) found_surface = false;
     for(uint32_t i = 0; i < queue_families.size(); i++)
     {   
         VkQueueFamilyProperties qf = queue_families[i];
@@ -190,12 +193,12 @@ bool VulkanPhysicalDevice::hasSupportQueueFamily(VkPhysicalDevice* device, Queue
                     queue_indices->present_index = i;
                     printfi("Found present index at: %d\n", i);
                 }
+                found_surface = true;
             }
         }
 
         if(queue_indices->graphics_index < UINT32_MAX && 
-            queue_indices->compute_index < UINT32_MAX && 
-            (surface != nullptr && queue_indices->present_index < UINT32_MAX)) return true;
+            queue_indices->compute_index < UINT32_MAX && found_surface) return true;
     }
 
     return false;
