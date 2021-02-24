@@ -6,11 +6,12 @@ VulkanSurface::VulkanSurface(VulkanInstance* instance, WindowSettings settings, 
     m_height = height;
     m_instance = instance;
     m_settings = settings;
-	printfi("Setting up Window\n");
+	printfi("Setting up Window...\n");
     setupWindow();
-	printfi("Creating Surface\n");
+	printfi("Creating Surface...\n");
     initSurface();
 }
+
 VulkanSurface::~VulkanSurface()
 {
 	if(m_surface != NULL) {
@@ -26,12 +27,80 @@ VulkanSurface::~VulkanSurface()
 #endif
 }
 
+void VulkanSurface::MainLoop(VkDevice device, std::function<bool()> func) 
+{
+	bool run = true;
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+	if(m_connection == nullptr) {
+		printfe("XCB connection is null\n");
+		return;
+	}
+	xcb_flush(m_connection);
+	while(run) {
+		xcb_generic_event_t* event;
+		while((event = xcb_poll_for_event(m_connection)))
+		{
+			run = handleEvent(event);
+			free(event);
+		}
+
+		run = func() && run;
+		if(!run) printfi("WINDOW IS CLOSING...\n");
+	}
+#endif
+
+	vkDeviceWaitIdle(device);
+}
+
 VkSurfaceKHR VulkanSurface::GetSurface() 
 {
 	return m_surface;
 }
 
 #if defined(VK_USE_PLATFORM_XCB_KHR)
+bool VulkanSurface::handleEvent(const xcb_generic_event_t* event) 
+{
+	switch(event->response_type & 0x07f)
+	{
+		case XCB_CLIENT_MESSAGE:
+			if ((*(xcb_client_message_event_t*)event).data.data32[0] ==
+				(*m_atom_wm_delete_window).atom) {
+				printf("CLIENT MESSAGE EVENT\n");
+				return false;
+			}
+		break;
+		case XCB_DESTROY_NOTIFY:
+			printf("DESTROY NOTIFY EVENT\n");
+			return false;
+		break;
+		case XCB_KEY_PRESS:
+		{
+			const xcb_key_release_event_t* press_event = (const xcb_key_release_event_t*) event;
+			switch(press_event->detail)
+			{
+
+			}
+		}
+		break;
+		case XCB_KEY_RELEASE:
+		{
+			const xcb_key_release_event_t* release_event = (const xcb_key_release_event_t*) event;
+			switch(release_event->detail)
+			{
+				case KEY_ESCAPE:
+					printf("CLIENT ESCAPE RELEASE\n");
+					return false;
+				break;
+			}
+		}
+		break;
+		default:
+		break;
+	}
+
+	return true;
+}
+
 static xcb_intern_atom_reply_t* intern_atom_helper(xcb_connection_t *conn, bool only_if_exists, const char *str) 
 {
     xcb_intern_atom_cookie_t cookie = xcb_intern_atom(conn, only_if_exists, strlen(str), str);
