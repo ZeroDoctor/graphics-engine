@@ -52,7 +52,7 @@ VulkanDevice::VulkanDevice(VulkanInstance* instance, VulkanPhysicalDevice* physi
             &m_graphics_queue
         );
     } else {
-        printfw("Failed to find suitable graphics indices");
+        printfw("Failed to find suitable graphics indices\n");
     }
 
     if(present_index < UINT32_MAX) {
@@ -64,7 +64,7 @@ VulkanDevice::VulkanDevice(VulkanInstance* instance, VulkanPhysicalDevice* physi
             &m_present_queue
         );
     } else {
-        printfw("Failed to find suitable presentation indices");
+        printfw("Failed to find suitable presentation indices\n");
     }
 
     createCommandPool(&m_ccompute_pool, compute_index, 0);
@@ -79,11 +79,6 @@ VulkanDevice::~VulkanDevice()
     
     printfi("-- Destroying Logcial Device...\n");
     vkDestroyDevice(m_device, nullptr);
-
-    if(m_physical_device != nullptr) {
-        printfi("-- Destroying Physical Device...\n");
-        delete(m_physical_device);
-    }
 }
 
 VkDevice VulkanDevice::GetDevice() { return m_device; }
