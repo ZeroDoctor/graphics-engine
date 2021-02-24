@@ -404,8 +404,6 @@ VkRenderPassCreateInfo init::render_pass_info(
         std::array<VkSubpassDependency, 2> dependencies
     )
 {
-    printfi("%d\n", attachments[0].flags);
-    printfi("%d\n", attachments[1].flags);
     VkRenderPassCreateInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     info.attachmentCount = static_cast<uint32_t>(attachments.size());

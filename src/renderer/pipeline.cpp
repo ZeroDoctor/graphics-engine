@@ -170,9 +170,11 @@ void VulkanGraphicsPipline::CreateRenderPass(VkFormat color_format, VkFormat dep
     printfi("Creating Render Pass...\n");
 
     std::array<VkAttachmentDescription, 2> attachment_descriptions;
-    
+    VkImageLayout final_layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    if(surface_enable) final_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
     attachment_descriptions[0] = init::description(
-        color_format, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+        color_format, final_layout
     );
 
     attachment_descriptions[1] = init::description(
@@ -380,12 +382,12 @@ void VulkanGraphicsPipline::CreateCommandBuffers(
     printfi("Create Command Buffer...\n");
 
     if(m_render_pass == NULL) {
-        printff("Can not create commmand buffers without render pass!");
+        printff("Can not create commmand buffers without render pass!\n");
     }
     if(m_frame_buffers[0] == NULL) {
-        printff("Can not create command buffers without frame buffers!");
+        printff("Can not create command buffers without frame buffers!\n");
     } else if(m_frame_buffers.size() < count) {
-        printfw("Something weird is going on here: frame_buffer < command_buffer");
+        printfw("Something weird is going on here: frame_buffer < command_buffer\n");
     }
 
     for(size_t i = 0; i < count; i++) buffers[i] = nullptr;
