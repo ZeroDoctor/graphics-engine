@@ -19,6 +19,12 @@ VulkanSwapChain::VulkanSwapChain(
     }
 
     VkSwapchainCreateInfoKHR info = init::swapchain_info(surface->GetSurface(), surface_format, extent, image_count);
+    if(details.capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) {
+        printfi("Found capable transfer source bit\n");
+        info.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    }
+
+
     QueueFamilyIndices indices = physical_device->GetQueueFamily();
     uint32_t queue_indices[] = {indices.graphics_index, indices.present_index};
 
