@@ -33,7 +33,7 @@ VulkanInstance::VulkanInstance(VulkanConfiguration& config)
     } */
     
     printfi("Create Instance... \n");
-    ErrorCheck(vkCreateInstance(&instance_info, NULL, &m_instance), "Create Instance");
+    ErrorCheck(vkCreateInstance(&instance_info, nullptr, &m_instance), "Create Instance");
     setupDebugMessenger();
 }
 
