@@ -12,11 +12,15 @@ endif(WIN32)
 
 find_package(Vulkan REQUIRED FATAL_ERROR)
 find_package(glm REQUIRED FATAL_ERROR)
-find_package(Freetype REQUIRED FATAL_ERROR)
 
 IF(UNIX AND NOT APPLE)
 	set(LINUX TRUE)
 ENDIF()
+
+add_subdirectory(vendor)
+
+set(imgui_PATH "${CMAKE_SOURCE_DIR}/vendor/imgui")
+file(GLOB imgui-backends "${imgui_PATH}/backends/imgui_impl_glfw.cpp" "${imgui_PATH}/backends/imgui_impl_opengl3.cpp")
 
 IF(WIN32)
 	IF (NOT Vulkan_FOUND)
@@ -86,7 +90,9 @@ file(GLOB main "*.cpp")
 
 add_executable (graphics-engine "${main}" "${util}" "${init}" "${setup}" "${renderer}")
 
-target_include_directories(graphics-engine PUBLIC ${FREETYPE_INCLUDE_DIRS})
+# target_include_directories(graphics-engine PUBLIC ${FREETYPE_INCLUDE_DIRS})
+target_include_directories(graphics-engine PRIVATE "${glfw3_PATH}/include")
+target_include_directories(graphics-engine PUBLIC "${imgui_PATH}/backends")
 target_include_directories(graphics-engine PUBLIC ${XCB_INCLUDE_DIR})
 target_include_directories(graphics-engine PUBLIC ${GLM_INCLUDE_DIRS})
 target_include_directories(graphics-engine PUBLIC ${Vulkan_INCLUDE_DIRS})
@@ -99,4 +105,11 @@ target_include_directories(graphics-engine PRIVATE main)
 # target_compile_options(graphics-engine PRIVATE "-Wno-format" "-Wno-format-security")
 target_compile_options(graphics-engine PRIVATE "-Wreturn-type")
 
-target_link_libraries(graphics-engine ${XCB_LIBRARIES} ${Vulkan_LIBRARY} ${GLM_LIBRARY} ${FREETYPE_LIBRARIES})
+
+target_link_libraries(graphics-engine PRIVATE spdlog::spdlog)
+target_link_libraries(graphics-engine PRIVATE glfw)
+target_link_libraries(graphics-engine PRIVATE libglew_static)
+target_link_libraries(graphics-engine PRIVATE imgui)
+target_link_libraries(graphics-engine PRIVATE ${XCB_LIBRARIES})
+target_link_libraries(graphics-engine PRIVATE ${Vulkan_LIBRARY})
+
