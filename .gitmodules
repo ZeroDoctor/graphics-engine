@@ -1,12 +1,12 @@
-[submodule "vendor/spdlog"]
-	path = vendor/spdlog
+[submodule "src/vendor/spdlog"]
+	path = src/vendor/spdlog
 	url = https://github.com/gabime/spdlog
-[submodule "vendor/glfw"]
-	path = vendor/glfw
+[submodule "src/vendor/glfw"]
+	path = src/vendor/glfw
 	url = https://github.com/glfw/glfw
-[submodule "vendor/glew-cmake"]
-	path = vendor/glew-cmake
+[submodule "src/vendor/glew-cmake"]
+	path = src/vendor/glew-cmake
 	url = git@github.com:Zerodoctor/glew-cmake
-[submodule "vendor/imgui"]
-	path = vendor/imgui
+[submodule "src/vendor/imgui"]
+	path = src/vendor/imgui
 	url = https://github.com/ocornut/imgui
